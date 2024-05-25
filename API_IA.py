@@ -19,6 +19,7 @@ class Producto(BaseModel):
     marca: str = Field(description="Marca del produto")
     modelo: str = Field(description="Modelo del producto")
     daño: str = Field(description="Descripción de los daños/marcas de uso del producto")
+    titulo: str =Field(description="Título llamativo sobre el producto")
     descripcion: str =Field(descripcion="Descripción de anuncio para atraer clientes")
     enfoque: bool = Field(description="La foto está enfocada")
     dedo: bool = Field(description="La foto contiene un dedo que impide ver parte del producto")
@@ -31,6 +32,7 @@ You must indicate the following characteristics of the product in Spanish:
 - Brand: product brand
 - Model: product model
 - Damage/Signs of use: if the product has any damage or signs of use, describe it
+- Title: catchy and short title about the product
 - Description: description of the advertisement to attract customers where it is named and includes
 - Focus: the photo is focused. True or False.
 - Finger: the photo contains a finger that obscures part of the product. True or False.
@@ -52,9 +54,7 @@ def analize_image(image_path,prompt,retries=2):
     content_image = [{"type": "image_url", "image_url": f"data:image/png;base64,{base64_image}"}]
 
     system_messsage = SystemMessage(content=prompt.format())
-    human_message = HumanMessage(
-                content=content_image
-            )
+    human_message = HumanMessage(content=content_image)
 
     chat = ChatOpenAI(model="gpt-4-vision-preview", max_tokens=256,openai_api_key="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",temperature=0.2) #Valor más bajo más determinista
 
@@ -71,7 +71,7 @@ def analize_image(image_path,prompt,retries=2):
     return{"error":str(last_exception)}
 
 def validate_response(response):
-    required_keys = {"estado", "marca", "modelo", "daño", "descripcion", "enfoque", "dedo"}
+    required_keys = {"estado", "marca", "modelo", "daño", "titulo", "descripcion", "enfoque", "dedo"}
     return isinstance(response, dict) and required_keys.issubset(response.keys())
 
 
