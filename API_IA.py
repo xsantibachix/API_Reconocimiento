@@ -47,7 +47,7 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
     
-def analize_image(image_path,prompt):
+def analize_image(image_path,prompt,retries=2):
     base64_image = encode_image(image_path)
     content_image = [{"type": "image_url", "image_url": f"data:image/png;base64,{base64_image}"}]
 
@@ -56,12 +56,24 @@ def analize_image(image_path,prompt):
                 content=content_image
             )
 
-    chat = ChatOpenAI(model="gpt-4-vision-preview", max_tokens=256,openai_api_key="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")
+    chat = ChatOpenAI(model="gpt-4-vision-preview", max_tokens=256,openai_api_key="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",temperature=0.2) #Valor más bajo más determinista
 
     chain = chat | parser
 
-    response = chain.invoke([system_messsage, human_message])
-    return response
+    for _ in range(retries):
+        try:
+            response = chain.invoke([system_messsage, human_message])
+            if validate_response(response):
+                return response
+        except Exception as e:
+            last_exception= e
+            continue
+    return{"error":str(last_exception)}
+
+def validate_response(response):
+    required_keys = {"estado", "marca", "modelo", "daño", "descripcion", "enfoque", "dedo"}
+    return isinstance(response, dict) and required_keys.issubset(response.keys())
+
 
 @app.route('/analyze_image', methods=['POST'])
 def analyze_image_endpoint():
@@ -80,7 +92,7 @@ def analyze_image_endpoint():
         try:
             response = analize_image(file_path, prompt) 
             os.remove(file_path)  # Opcional: eliminar la imagen después del procesamiento
-            return jsonify(response)
+            return jsonify(response) #Response 613 bytes [200 OK]
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
