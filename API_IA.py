@@ -62,10 +62,13 @@ def analize_image(image_path,prompt,retries=2):
 
     for _ in range(retries):
         try:
+           
             response = chain.invoke([system_messsage, human_message])
+            
             if validate_response(response):
                 return response
         except Exception as e:
+            print(e)
             last_exception= e
             continue
     return{"error":str(last_exception)}
